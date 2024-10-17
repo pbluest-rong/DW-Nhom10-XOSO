@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
-public class WebSrawler {
+public class WebCrawler {
     public static final String TPHCM_URL = "https://www.xoso.net/getkqxs/tp-hcm";
     public static final String DONGTHAP_URL = "https://www.xoso.net/getkqxs/dong-thap";
     public static final String CAMAU_URL = "https://www.xoso.net/getkqxs/ca-mau";
@@ -50,6 +50,6 @@ public class WebSrawler {
     }
 
     public static void main(String[] args) {
-        System.out.println(Arrays.toString(WebSrawler.getDataFromWebsite("TPHCM_URL", TPHCM_URL)));
+        System.out.println(Arrays.toString(WebCrawler.getDataFromWebsite("TPHCM_URL", TPHCM_URL)));
     }
 }

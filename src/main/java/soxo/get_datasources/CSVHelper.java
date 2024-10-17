@@ -7,8 +7,6 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +36,7 @@ public class CSVHelper {
     public static void updateCSVIfNewData(String csvFilePath, String xoSoUrl, String provinceName) {
         List<String[]> csvData = CSVHelper.readCSV(csvFilePath);
 
-        String[] newRecord = WebSrawler.getDataFromWebsite(provinceName, xoSoUrl); // Crawl dữ liệu mới (hàm bạn đã viết)
+        String[] newRecord = WebCrawler.getDataFromWebsite(provinceName, xoSoUrl); // Crawl dữ liệu mới (hàm bạn đã viết)
 
         // Kiểm tra xem đã có dữ liệu cho ngày này chưa
         boolean isNewRecord = csvData.stream().noneMatch(record -> record[0].equals(provinceName) && record[10].equals(newRecord[newRecord.length - 1]));
