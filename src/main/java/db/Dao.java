@@ -1,10 +1,12 @@
 package db;
 
+import entity.StagingLottery;
 import org.jdbi.v3.core.Jdbi;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class Dao {
     private final Jdbi jdbi;
@@ -34,40 +36,59 @@ public class Dao {
        return formattedDate;
    }
     // Insert method for table `date`
-    public void insertDate(int id, int day, int month, int year) {
-        String sql = "INSERT INTO date (id, day, month, year) VALUES (:id, :day, :month, :year)";
-        jdbi.useHandle(handle ->
-                handle.createUpdate(sql)
-                        .bind("id", id)
+    public void insertDate(int day, int month, int year) {
+        String checkSql = "SELECT COUNT(*) FROM date WHERE day = :day AND month = :month AND year = :year";
+        String insertSql = "INSERT INTO date (day, month, year) VALUES (:day, :month, :year)";
+
+        jdbi.useHandle(handle -> {
+            int count = handle.createQuery(checkSql)
+                    .bind("day", day)
+                    .bind("month", month)
+                    .bind("year", year)
+                    .mapTo(Integer.class)
+                    .one();
+
+            if (count == 0) {
+                handle.createUpdate(insertSql)
                         .bind("day", day)
                         .bind("month", month)
                         .bind("year", year)
-                        .execute()
-        );
+                        .execute();
+            }
+        });
     }
+
 
     // Insert method for table `province`
-    public void insertProvince(int id, String name) {
-        String sql = "INSERT INTO province (id, name) VALUES (:id, :name)";
-        jdbi.useHandle(handle ->
-                handle.createUpdate(sql)
-                        .bind("id", id)
+    public void insertProvince(String name) {
+        String checkSql = "SELECT COUNT(*) FROM province WHERE name = :name";
+        String insertSql = "INSERT INTO province (name) VALUES (:name)";
+
+        jdbi.useHandle(handle -> {
+            int count = handle.createQuery(checkSql)
+                    .bind("name", name)
+                    .mapTo(Integer.class)
+                    .one();
+
+            if (count == 0) {
+                handle.createUpdate(insertSql)
                         .bind("name", name)
-                        .execute()
-        );
+                        .execute();
+            }
+        });
     }
 
+
     // Insert method for table `file_config`
-    public void insertFileConfig(int id, String phase, String source, String sourceName, String area,
+    public void insertFileConfig(String phase, String source, String sourceName, String area,
                                  String pathToSave, String fileNameFormat, String fileType, String timeGetData,
                                  int interval, String createDate, String updateDate, String description, int status) {
-        String sql = "INSERT INTO file_config (id, phase, source, source_name, area, path_to_save, file_name_format, " +
-                "file_type, time_get_data, interval, create_date, update_date, description, status) " +
-                "VALUES (:id, :phase, :source, :source_name, :area, :path_to_save, :file_name_format, :file_type, " +
+        String sql = "INSERT INTO file_config (phase, source, source_name, area, path_to_save, file_name_format, " +
+                "file_type, time_get_data, `interval`, create_date, update_date, description, status) " +
+                "VALUES (:phase, :source, :source_name, :area, :path_to_save, :file_name_format, :file_type, " +
                 ":time_get_data, :interval, :create_date, :update_date, :description, :status)";
         jdbi.useHandle(handle ->
                 handle.createUpdate(sql)
-                        .bind("id", id)
                         .bind("phase", phase)
                         .bind("source", source)
                         .bind("source_name", sourceName)
@@ -86,14 +107,13 @@ public class Dao {
     }
 
     // Insert method for table `file_log`
-    public void insertFileLog(int id, String trackingDateTime, String source, int connectStatus,
+    public void insertFileLog(String trackingDateTime, String source, int connectStatus,
                               String destination, String phase, String result, String detail, boolean isDelete) {
-        String sql = "INSERT INTO file_log (id, tracking_date_time, source, connect_status, destination, phase, result, " +
-                "detail, is_delete) VALUES (:id, :tracking_date_time, :source, :connect_status, :destination, :phase, " +
+        String sql = "INSERT INTO file_log (tracking_date_time, source, connect_status, destination, phase, result, " +
+                "detail, is_delete) VALUES (:tracking_date_time, :source, :connect_status, :destination, :phase, " +
                 ":result, :detail, :is_delete)";
         jdbi.useHandle(handle ->
                 handle.createUpdate(sql)
-                        .bind("id", id)
                         .bind("tracking_date_time", trackingDateTime)
                         .bind("source", source)
                         .bind("connect_status", connectStatus)
@@ -107,16 +127,15 @@ public class Dao {
     }
 
     // Insert method for table `lottery`
-    public void insertLottery(int id, int provinceId, int dateId, String prizeSpecial, String prizeOne,
+    public void insertLottery(int provinceId, int dateId, String prizeSpecial, String prizeOne,
                               String prizeTwo, String prizeThree, String prizeFour, String prizeFive,
                               String prizeSix, String prizeSeven, String prizeEight) {
-        String sql = "INSERT INTO lottery (id, province_id, date_id, prize_special, prize_one, prize_two, prize_three, " +
+        String sql = "INSERT INTO lottery (province_id, date_id, prize_special, prize_one, prize_two, prize_three, " +
                 "prize_four, prize_five, prize_six, prize_seven, prize_eight) " +
-                "VALUES (:id, :province_id, :date_id, :prize_special, :prize_one, :prize_two, :prize_three, " +
+                "VALUES (:province_id, :date_id, :prize_special, :prize_one, :prize_two, :prize_three, " +
                 ":prize_four, :prize_five, :prize_six, :prize_seven, :prize_eight)";
         jdbi.useHandle(handle ->
                 handle.createUpdate(sql)
-                        .bind("id", id)
                         .bind("province_id", provinceId)
                         .bind("date_id", dateId)
                         .bind("prize_special", prizeSpecial)
@@ -155,6 +174,51 @@ public class Dao {
                         .bind("prize_seven", prizeSeven)
                         .bind("prize_eight", prizeEight)
                         .bind("date", convertDateForInsert(date)) // Use the formatted date
+                        .execute()
+        );
+    }
+    // Phương thức để truy vấn dữ liệu từ bảng staging_lottery
+    public List<StagingLottery> selectStagingLottery() {
+        String sql = "SELECT id, province, prize_special AS prizeSpecial, prize_one AS prizeOne, " +
+                "prize_two AS prizeTwo, prize_three AS prizeThree, prize_four AS prizeFour, " +
+                "prize_five AS prizeFive, prize_six AS prizeSix, prize_seven AS prizeSeven, " +
+                "prize_eight AS prizeEight, date FROM staging_lottery";
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery(sql)
+                        .mapToBean(StagingLottery.class) // Ánh xạ kết quả vào class StagingLottery
+                        .list()
+        );
+    }
+    public Integer getProvinceId(String name) {
+        String sql = "SELECT id FROM province WHERE name = :name";
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery(sql)
+                        .bind("name", name)
+                        .mapTo(Integer.class)
+                        .findOne()
+                        .orElse(null)
+        );
+    }
+    public Integer getDateId(int day, int month, int year) {
+        String sql = "SELECT id FROM date WHERE day = :day AND month = :month AND year = :year";
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery(sql)
+                        .bind("day", day)
+                        .bind("month", month)
+                        .bind("year", year)
+                        .mapTo(Integer.class)
+                        .findOne()
+                        .orElse(null)
+        );
+    }
+    public void clearStagingLottery() {
+        String sql = "DELETE FROM staging_lottery";
+
+        jdbi.useHandle(handle ->
+                handle.createUpdate(sql)
                         .execute()
         );
     }
