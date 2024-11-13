@@ -1,11 +1,15 @@
 package db;
 
+import entity.FileConfig;
+import entity.FileLog;
 import entity.StagingLottery;
+import enums.ConfigStatus;
+import enums.ConfigType;
 import org.jdbi.v3.core.Jdbi;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class Dao {
@@ -22,19 +26,138 @@ public class Dao {
         this.jdbi = JDBIConnector.me();
     }
 
-    // Convert the date format from "dd/MM/yyyy" to "yyyy-MM-dd"
-   public String convertDateForInsert(String date){
-       String formattedDate = "";
-       try {
-           SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy");
-           SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
-           Date parsedDate = inputFormat.parse(date);
-           formattedDate = outputFormat.format(parsedDate);
-       } catch (ParseException e) {
-           e.printStackTrace();
-       }
-       return formattedDate;
-   }
+    public FileConfig selectFileConfigByUrl(String url) {
+        String sql = "SELECT config_id AS configId, type, province, date, url, file_path AS filePath, " +
+                "table_warehouse AS tableWarehouse, table_staging AS tableStaging, schedule " +
+                "FROM file_configs WHERE url = :url";
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery(sql)
+                        .bind("url", url) // Liên kết tham số URL
+                        .mapToBean(FileConfig.class) // Ánh xạ kết quả vào đối tượng FileConfig
+                        .findOne() // Lấy kết quả duy nhất hoặc trả về null nếu không có dữ liệu
+                        .orElse(null) // Nếu không tìm thấy, trả về null
+        );
+    }
+
+    public boolean hasFileConfigSucceeded(int configId) {
+        String sql = "SELECT status FROM file_logs WHERE config_id = :configId ORDER BY log_id DESC LIMIT 1";
+
+        return jdbi.withHandle(handle -> {
+            String status = handle.createQuery(sql)
+                    .bind("configId", configId)
+                    .mapTo(String.class)
+                    .findOne()
+                    .orElse("ERROR"); // Nếu không có log, mặc định là 'ERROR'
+            return "SUCCESS".equals(status); // Kiểm tra xem trạng thái là SUCCESS không
+        });
+    }
+
+    // Phương thức để chèn dữ liệu vào bảng file_configs và trả về id của bản ghi
+    public Integer insertFileConfig(ConfigType type, String province, LocalDate date, String url, String filePath,
+                                    String tableWarehouse, String tableStaging, long schedule) {
+        // Truy vấn kiểm tra xem file_config đã tồn tại chưa
+        String checkSql = "SELECT COUNT(*) FROM file_configs WHERE type = :type AND province = :province AND date = :date";
+        // Truy vấn chèn dữ liệu vào bảng file_configs
+        String insertSql = "INSERT INTO file_configs (type, province, date, url, file_path, table_warehouse, " +
+                "table_staging, schedule) VALUES (:type, :province, :date, :url, :filePath, :tableWarehouse, " +
+                ":tableStaging, :schedule)";
+
+        return jdbi.withHandle(handle -> {
+            // Chuyển LocalDate thành chuỗi
+            String dateString = date == null ? null : date.toString();  // Ví dụ: "2024-11-13"
+
+            // Kiểm tra sự tồn tại của file_config với type, province và date
+            int count = handle.createQuery(checkSql)
+                    .bind("type", type.name())  // Convert enum to string using `name()`
+                    .bind("province", province)
+                    .bind("date", dateString)  // Sử dụng chuỗi ngày đã chuyển đổi
+                    .mapTo(Integer.class)
+                    .one();
+
+            // Nếu không tồn tại, tiến hành chèn dữ liệu mới và trả về id của bản ghi mới
+            if (count == 0) {
+                // Chèn bản ghi và lấy id của bản ghi mới
+                return handle.createUpdate(insertSql)
+                        .bind("type", type.name())  // Convert enum to string using `name()`
+                        .bind("province", province)
+                        .bind("date", dateString)  // Sử dụng chuỗi ngày đã chuyển đổi
+                        .bind("url", url)
+                        .bind("filePath", filePath)
+                        .bind("tableWarehouse", tableWarehouse)
+                        .bind("tableStaging", tableStaging)
+                        .bind("schedule", schedule)
+                        .executeAndReturnGeneratedKeys("config_id")  // Lấy key tự động (id)
+                        .mapTo(Integer.class)
+                        .one();
+            } else {
+                // Nếu đã tồn tại, trả về null hoặc giá trị khác tùy yêu cầu của bạn
+                return null;
+            }
+        });
+    }
+
+    // Phương thức để chèn dữ liệu vào bảng file_logs và trả về id của bản ghi
+    public Integer insertFileLog(Integer fileConfigId, LocalDateTime startTime, LocalDateTime endTime,
+                                 ConfigStatus status, String errorMessage) {
+        // Truy vấn chèn dữ liệu vào bảng file_logs
+        String insertSql = "INSERT INTO file_logs (config_id, start_time, end_time, status, error) " +
+                "VALUES (:fileConfigId, :startTime, :endTime, :status, :error)";
+
+        return jdbi.withHandle(handle -> {
+            // Chuyển LocalDateTime thành chuỗi theo định dạng cần thiết (yyyy-MM-dd HH:mm:ss)
+            String startTimeString = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            String endTimeString = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+            // Nếu có lỗi, chèn thông điệp lỗi vào trường `error`; nếu không, giá trị sẽ là null
+            String error = (!status.equals("SUCCESS")) ? errorMessage : null;
+
+            // Chèn bản ghi và trả về id của bản ghi mới
+            return handle.createUpdate(insertSql)
+                    .bind("fileConfigId", fileConfigId)
+                    .bind("startTime", startTimeString)  // Chuyển thời gian thành chuỗi
+                    .bind("endTime", endTimeString)      // Chuyển thời gian thành chuỗi
+                    .bind("status", status.name())
+                    .bind("error", error)  // Chỉ chèn thông điệp lỗi nếu trạng thái là "ERROR"
+                    .executeAndReturnGeneratedKeys("log_id")  // Lấy key tự động (id)
+                    .mapTo(Integer.class)
+                    .one();
+        });
+    }
+
+    public List<FileLog> selectFileLogsByFilePathAndNotDeleted(String filePath) {
+        String sql = "SELECT f.log_id, f.config_id, f.start_time, f.end_time, f.status, f.error, f.isDeletedFile " +
+                "FROM file_logs f " +
+                "JOIN file_configs c ON f.config_id = c.config_id " +
+                "WHERE c.file_path = :filePath AND f.isDeletedFile = 0";
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery(sql)
+                        .bind("filePath", filePath)
+                        .mapToBean(FileLog.class)  // Ánh xạ kết quả truy vấn thành đối tượng FileLog
+                        .list()  // Sử dụng `list()` để lấy tất cả các bản ghi khớp
+        );
+    }
+
+    public void markFileLogAsDeletedByFilePath(String filePath) {
+        String sql = "UPDATE file_logs f " +
+                "JOIN file_configs c ON f.config_id = c.config_id " +
+                "SET f.isDeletedFile = 1 " +
+                "WHERE c.file_path = :filePath AND f.isDeletedFile = 0";
+
+        // Sử dụng jdbi để thực hiện cập nhật
+        jdbi.withHandle(handle ->
+                handle.createUpdate(sql)
+                        .bind("filePath", filePath)
+                        .execute()  // Thực hiện câu lệnh cập nhật
+        );
+    }
+
+    private String convertDateForSQL(LocalDateTime datetime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return datetime.format(formatter);
+    }
+
     // Insert method for table `date`
     public void insertDate(int day, int month, int year) {
         String checkSql = "SELECT COUNT(*) FROM date WHERE day = :day AND month = :month AND year = :year";
@@ -58,7 +181,6 @@ public class Dao {
         });
     }
 
-
     // Insert method for table `province`
     public void insertProvince(String name) {
         String checkSql = "SELECT COUNT(*) FROM province WHERE name = :name";
@@ -78,62 +200,15 @@ public class Dao {
         });
     }
 
-
-    // Insert method for table `file_config`
-    public void insertFileConfig(String phase, String source, String sourceName, String area,
-                                 String pathToSave, String fileNameFormat, String fileType, String timeGetData,
-                                 int interval, String createDate, String updateDate, String description, int status) {
-        String sql = "INSERT INTO file_config (phase, source, source_name, area, path_to_save, file_name_format, " +
-                "file_type, time_get_data, `interval`, create_date, update_date, description, status) " +
-                "VALUES (:phase, :source, :source_name, :area, :path_to_save, :file_name_format, :file_type, " +
-                ":time_get_data, :interval, :create_date, :update_date, :description, :status)";
-        jdbi.useHandle(handle ->
-                handle.createUpdate(sql)
-                        .bind("phase", phase)
-                        .bind("source", source)
-                        .bind("source_name", sourceName)
-                        .bind("area", area)
-                        .bind("path_to_save", pathToSave)
-                        .bind("file_name_format", fileNameFormat)
-                        .bind("file_type", fileType)
-                        .bind("time_get_data", timeGetData)
-                        .bind("interval", interval)
-                        .bind("create_date", createDate)
-                        .bind("update_date", updateDate)
-                        .bind("description", description)
-                        .bind("status", status)
-                        .execute()
-        );
-    }
-
-    // Insert method for table `file_log`
-    public void insertFileLog(String trackingDateTime, String source, int connectStatus,
-                              String destination, String phase, String result, String detail, boolean isDelete) {
-        String sql = "INSERT INTO file_log (tracking_date_time, source, connect_status, destination, phase, result, " +
-                "detail, is_delete) VALUES (:tracking_date_time, :source, :connect_status, :destination, :phase, " +
-                ":result, :detail, :is_delete)";
-        jdbi.useHandle(handle ->
-                handle.createUpdate(sql)
-                        .bind("tracking_date_time", trackingDateTime)
-                        .bind("source", source)
-                        .bind("connect_status", connectStatus)
-                        .bind("destination", destination)
-                        .bind("phase", phase)
-                        .bind("result", result)
-                        .bind("detail", detail)
-                        .bind("is_delete", isDelete)
-                        .execute()
-        );
-    }
-
     // Insert method for table `lottery`
     public void insertLottery(int provinceId, int dateId, String prizeSpecial, String prizeOne,
                               String prizeTwo, String prizeThree, String prizeFour, String prizeFive,
-                              String prizeSix, String prizeSeven, String prizeEight) {
+                              String prizeSix, String prizeSeven, String prizeEight, LocalDateTime expireDate) {
+        String expire_date = convertDateForSQL(expireDate);
         String sql = "INSERT INTO lottery (province_id, date_id, prize_special, prize_one, prize_two, prize_three, " +
-                "prize_four, prize_five, prize_six, prize_seven, prize_eight) " +
+                "prize_four, prize_five, prize_six, prize_seven, prize_eight, expire_date) " +
                 "VALUES (:province_id, :date_id, :prize_special, :prize_one, :prize_two, :prize_three, " +
-                ":prize_four, :prize_five, :prize_six, :prize_seven, :prize_eight)";
+                ":prize_four, :prize_five, :prize_six, :prize_seven, :prize_eight, :expire_date)";
         jdbi.useHandle(handle ->
                 handle.createUpdate(sql)
                         .bind("province_id", provinceId)
@@ -147,6 +222,7 @@ public class Dao {
                         .bind("prize_six", prizeSix)
                         .bind("prize_seven", prizeSeven)
                         .bind("prize_eight", prizeEight)
+                        .bind("expire_date", expire_date)
                         .execute()
         );
     }
@@ -173,10 +249,11 @@ public class Dao {
                         .bind("prize_six", prizeSix)
                         .bind("prize_seven", prizeSeven)
                         .bind("prize_eight", prizeEight)
-                        .bind("date", convertDateForInsert(date)) // Use the formatted date
+                        .bind("date", date)
                         .execute()
         );
     }
+
     // Phương thức để truy vấn dữ liệu từ bảng staging_lottery
     public List<StagingLottery> selectStagingLottery() {
         String sql = "SELECT id, province, prize_special AS prizeSpecial, prize_one AS prizeOne, " +
@@ -190,6 +267,7 @@ public class Dao {
                         .list()
         );
     }
+
     public Integer getProvinceId(String name) {
         String sql = "SELECT id FROM province WHERE name = :name";
 
@@ -201,6 +279,7 @@ public class Dao {
                         .orElse(null)
         );
     }
+
     public Integer getDateId(int day, int month, int year) {
         String sql = "SELECT id FROM date WHERE day = :day AND month = :month AND year = :year";
 
@@ -214,6 +293,7 @@ public class Dao {
                         .orElse(null)
         );
     }
+
     public void clearStagingLottery() {
         String sql = "DELETE FROM staging_lottery";
 

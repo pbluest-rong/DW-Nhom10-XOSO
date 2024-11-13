@@ -4,6 +4,7 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import org.jdbi.v3.core.Jdbi;
 
 import java.sql.SQLException;
+import java.sql.SQLOutput;
 
 public class JDBIConnector {
    private static Jdbi jdbi;
@@ -17,9 +18,11 @@ public class JDBIConnector {
            mysqlDataSource.setAutoReconnect(true);
            mysqlDataSource.setUseCompression(true);
        } catch (SQLException e) {
+           System.out.println("ERROR! Kết nối database thất bại.");
            throw new RuntimeException(e);
        }
        jdbi = Jdbi.create(mysqlDataSource);
+       System.out.println("Kết nối database thành công!");
    }
 
     public JDBIConnector() {

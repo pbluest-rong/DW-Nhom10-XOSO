@@ -7,7 +7,7 @@ public class DBProperties {
    private static Properties properties = new Properties();
    static {
        try {
-           properties.load(DBProperties.class.getClassLoader().getResourceAsStream("DB.properties"));
+           properties.load(DBProperties.class.getClassLoader().getResourceAsStream("config.properties"));
        } catch (IOException e) {
            throw new RuntimeException(e);
        }

@@ -14,7 +14,7 @@ public class StagingLottery {
     private String prizeSix;
     private String prizeSeven;
     private String prizeEight;
-    private LocalDate date;
+    private String date;
 
     public int getId() {
         return id;
@@ -104,11 +104,11 @@ public class StagingLottery {
         this.prizeEight = prizeEight;
     }
 
-    public LocalDate getDate() {
+    public String getDate() {
         return date;
     }
 
-    public void setDate(LocalDate date) {
+    public void setDate(String date) {
         this.date = date;
     }
 
@@ -127,6 +127,6 @@ public class StagingLottery {
                 ", prizeSeven='" + prizeSeven + '\'' +
                 ", prizeEight='" + prizeEight + '\'' +
                 ", date='" + date + '\'' +
-                '}' +"\n";
+                '}' + "\n";
     }
 }
