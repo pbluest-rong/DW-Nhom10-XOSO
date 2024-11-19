@@ -16,6 +16,7 @@ public class Dao {
     private final Jdbi jdbi;
     private static Dao instance;
 
+    // tải file config.properties và thiết lập kết nối
     public static Dao getInstance() {
         if (instance == null)
             instance = new Dao();
@@ -95,6 +96,18 @@ public class Dao {
                 return null;
             }
         });
+    }
+
+    public void updateFileConfigProvinceAndDate(int configId, String province, LocalDate date) {
+        String sql = "UPDATE file_configs SET province = :province, date = :date WHERE config_id = :configId";
+
+        jdbi.useHandle(handle ->
+                handle.createUpdate(sql)
+                        .bind("configId", configId)
+                        .bind("province", province)
+                        .bind("date", date == null ? null : date.toString()) // Chuyển LocalDate thành chuỗi hoặc null
+                        .execute()
+        );
     }
 
     // Phương thức để chèn dữ liệu vào bảng file_logs và trả về id của bản ghi

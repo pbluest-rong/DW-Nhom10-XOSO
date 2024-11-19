@@ -21,19 +21,22 @@ public class GetDataToCSV {
     }
 
     public static void run(String csvFilePath, String province, LocalDate date, long schedule) {
-        //url: trong trường hợp này chỉ để ghi log
+        //Tạo đường dẫn url để lấy dữ liệu
         String url = ProvinceURL.getFullURL(province, date);
         String error = null;
         try {
-            // 1 kết nối database
+            // kết nối database
             Dao dao = Dao.getInstance();
-            // 2 get config
+            // Load config
             FileConfig fileConfig = dao.selectFileConfigByUrl(url);
-            // 3 thoát
+            // Kiểm tra process này đã chạy thành công trước đó hay chưa
             if (fileConfig != null && dao.hasFileConfigSucceeded(fileConfig.getConfigId())) {
                 System.out.println("Trước đó, url này đã đươc crawl thành công!");
             } else {
-                // 5 crawl -> csv file
+                // Nếu process chưa chạy thành công trước đó
+                // Ghi config
+                Integer configId = dao.insertFileConfig(ConfigType.CRAWL_DATA, province, date, url, csvFilePath, "lottery", "staging_lottery", schedule);
+                // Crawl dữ liệu
                 File file = null;
                 LocalDateTime startTime = LocalDateTime.now();
                 try {
@@ -42,12 +45,12 @@ public class GetDataToCSV {
                     error = "crawl và lưu xuống csv file thất bại";
                 }
                 LocalDateTime endTime = LocalDateTime.now();
-                // 6 ghi control
-                Integer configId = dao.insertFileConfig(ConfigType.CRAWL_DATA, province, date, url, csvFilePath, "lottery", "staging_lottery", schedule);
-                // 4 insert logs
+                // Kiểm tra crawl có thành công
                 if (file == null) {
+                    // Nếu thất bại, ghi 1 log với trạng thái ERROR
                     dao.insertFileLog(configId, startTime, endTime, ConfigStatus.ERROR, error);
                 } else {
+                    // Nếu thành công, ghi 1 log với trạng thái SUCCESS
                     dao.insertFileLog(configId, startTime, endTime, ConfigStatus.SUCCESS, null);
                 }
             }
@@ -56,22 +59,24 @@ public class GetDataToCSV {
             e.printStackTrace();
         }
     }
-
     public static void run(String csvFilePath, String province, long schedule) {
-        //url: trong trường hợp này chỉ để ghi log
+        //Tạo đường dẫn url để lấy dữ liệu
         LocalDate date = LocalDate.now();
         String url = ProvinceURL.getFullURL(province, date);
         String error = null;
         try {
-            // 1 kết nối database
+            // kết nối database
             Dao dao = Dao.getInstance();
-            // 2 get config
+            // Load config
             FileConfig fileConfig = dao.selectFileConfigByUrl(url);
-            // 3 thoát
+            // Kiểm tra process này đã chạy thành công trước đó hay chưa
             if (fileConfig != null && dao.hasFileConfigSucceeded(fileConfig.getConfigId())) {
                 System.out.println("Trước đó, url này đã đươc crawl thành công!");
             } else {
-                // 5 crawl -> csv file
+                // Nếu process chưa chạy thành công trước đó
+                // Ghi config
+                Integer configId = dao.insertFileConfig(ConfigType.CRAWL_DATA, province, date, url, csvFilePath, "lottery", "staging_lottery", schedule);
+                // Crawl dữ liệu
                 File file = null;
                 LocalDateTime startTime = LocalDateTime.now();
                 try {
@@ -80,12 +85,12 @@ public class GetDataToCSV {
                     error = "crawl và lưu xuống csv file thất bại";
                 }
                 LocalDateTime endTime = LocalDateTime.now();
-                // 6 ghi config
-                Integer configId = dao.insertFileConfig(ConfigType.CRAWL_DATA, province, date, url, csvFilePath, "lottery", "staging_lottery", schedule);
-                // 4 insert logs
+                // Kiểm tra crawl có thành công
                 if (file == null) {
+                    // Nếu thất bại, ghi 1 log với trạng thái ERROR
                     dao.insertFileLog(configId, startTime, endTime, ConfigStatus.ERROR, error);
                 } else {
+                    // Nếu thành công, ghi 1 log với trạng thái SUCCESS
                     dao.insertFileLog(configId, startTime, endTime, ConfigStatus.SUCCESS, null);
                 }
             }
