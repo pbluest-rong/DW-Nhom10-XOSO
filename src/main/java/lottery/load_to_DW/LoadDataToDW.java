@@ -1,4 +1,4 @@
-package soxo.transform_data;
+package lottery.load_to_DW;
 
 import db.Dao;
 import entity.StagingLottery;
@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class TransformData {
+public class LoadDataToDW {
     public static void run(long schedule) {
         // Tải config.properties và kết nối database
         Dao dao = Dao.getInstance();
@@ -44,11 +44,14 @@ public class TransformData {
                 LocalDateTime endTime = LocalDateTime.now();
                 // Ghi log với status SUCCESS
                 dao.insertFileLog(configId, startTime, endTime, ConfigStatus.SUCCESS, null);
+                // Xóa record trong staging
+                dao.removeStagingLottery(sl.getId());
             } catch (Exception e) {
                 // Ghi log với status ERROR
                 String error = "Lỗi khi lưu dữ liệu vào dim và fact";
                 LocalDateTime endTime = LocalDateTime.now();
-                dao.insertFileLog(configId, startTime, endTime, ConfigStatus.ERROR, error);
+                if (configId != null)
+                    dao.insertFileLog(configId, startTime, endTime, ConfigStatus.ERROR, error);
             }
         }
     }

@@ -1,22 +1,16 @@
-package soxo.load_data;
+package lottery.load_to_staging;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import db.Dao;
-import entity.FileLog;
 import enums.ConfigStatus;
 import enums.ConfigType;
-import soxo.get_data.WebCrawler;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.List;
 
 public class LoadDataToStaging {
     public static void run(String csvFilePath, long schedule) {

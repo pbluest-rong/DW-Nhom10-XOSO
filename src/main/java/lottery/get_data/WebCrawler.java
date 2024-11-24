@@ -1,4 +1,4 @@
-package soxo.get_data;
+package lottery.get_data;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -14,7 +14,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class WebCrawler {

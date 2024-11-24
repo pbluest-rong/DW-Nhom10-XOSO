@@ -1,4 +1,4 @@
-package soxo.get_data;
+package lottery.get_data;
 
 import db.Dao;
 import entity.FileConfig;
@@ -9,9 +9,7 @@ import enums.ProvinceURL;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 
 public class GetDataToCSV {
     public static String generateFileNameWithDate(LocalDate date) {
@@ -59,6 +57,7 @@ public class GetDataToCSV {
             e.printStackTrace();
         }
     }
+
     public static void run(String csvFilePath, String province, long schedule) {
         //Tạo đường dẫn url để lấy dữ liệu
         LocalDate date = LocalDate.now();
@@ -95,8 +94,7 @@ public class GetDataToCSV {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Crawl data thất bại: " + province + date);
-            e.printStackTrace();
+            System.out.println("Crawl data thất bại: " + province + " " + date);
         }
     }
 

@@ -1,5 +1,6 @@
 package db;
 
+import entity.DataMart;
 import entity.FileConfig;
 import entity.FileLog;
 import entity.StagingLottery;
@@ -281,6 +282,29 @@ public class Dao {
         );
     }
 
+    public List<DataMart> getDataMart(LocalDate date) {
+        String sql = "SELECT l.id, p.name AS province, " +
+                "       l.prize_special AS prizeSpecial, l.prize_one AS prizeOne, " +
+                "       l.prize_two AS prizeTwo, l.prize_three AS prizeThree, " +
+                "       l.prize_four AS prizeFour, l.prize_five AS prizeFive, " +
+                "       l.prize_six AS prizeSix, l.prize_seven AS prizeSeven, " +
+                "       l.prize_eight AS prizeEight " +
+                "FROM lottery l " +
+                "JOIN province p ON l.province_id = p.id " +
+                "JOIN date d ON l.date_id = d.id " +
+                "WHERE d.day = :day AND d.month = :month AND d.year = :year";
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery(sql)
+                        .bind("day", date.getDayOfMonth())
+                        .bind("month", date.getMonthValue())
+                        .bind("year", date.getYear())
+                        .mapToBean(DataMart.class)
+                        .list()
+        );
+    }
+
+
     public Integer getProvinceId(String name) {
         String sql = "SELECT id FROM province WHERE name = :name";
 
@@ -312,6 +336,16 @@ public class Dao {
 
         jdbi.useHandle(handle ->
                 handle.createUpdate(sql)
+                        .execute()
+        );
+    }
+
+    public void removeStagingLottery(int id) {
+        String sql = "DELETE FROM staging_lottery where id=:id";
+
+        jdbi.useHandle(handle ->
+                handle.createUpdate(sql)
+                        .bind("id", id)
                         .execute()
         );
     }
