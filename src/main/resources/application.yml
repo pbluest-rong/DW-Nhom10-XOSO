@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: elt
+  datasource:
+    url: jdbc:mysql://localhost:3306/lottery_db
+    username: root
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+etl:
+  main-url: ""
+  head-url: "https://www.xoso.net/getkqxs/"
+  tail-url: ".js"
