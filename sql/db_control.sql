@@ -1,7 +1,6 @@
 create database if not exists dbcontrol;
 use dbcontrol;
 
-
 CREATE TABLE if not exists process_properties (
     property_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

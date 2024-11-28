@@ -1,8 +1,7 @@
-import com.lottery.service.CleanService;
-import com.lottery.service.CrawlService;
-import com.lottery.service.LoadService;
-import com.lottery.service.LoggingService;
+package com.lottery.service;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -11,8 +10,10 @@ import java.time.format.DateTimeFormatter;
 @Service
 @RequiredArgsConstructor
 public class ETLRun {
+    @Value("${etl.datasources-hub}")
+    private String datasourcesHub;
+
     private final CrawlService crawlService;
-    private final CleanService cleanService;
     private final LoadService loadService;
     private final LoggingService loggingService;
 
@@ -24,18 +25,15 @@ public class ETLRun {
 
     public void runETLProcess() {
         try {
-            // Bắt đầu quy trình ETL
-
             // 1. Crawl Data
-            String path = "csv-data-sources/"+generateFileNameWithDate(LocalDate.of(2024,1,1));
-            System.out.println("path: "+path);
-            crawlService.crawlDataAndExportCSV(path, LocalDate.of(2024,1,1));
+            LocalDate date = LocalDate.of(2024, 11, 27);
+            crawlService.crawlDataAndExportCSV(datasourcesHub + generateFileNameWithDate(date), date);
 
-            // 2. Clean Data
-            cleanService.cleanData();
+            // 2. load data to Staging
+            loadService.loadDataToStaging();
 
             // 3. Load Data to Warehouse
-            loadService.loadDataToWarehouse();
+            loadService.transformAndLoadDataToWarehouse();
 
             // Kết thúc quá trình ETL
             loggingService.logProcess("ETL Process", "ETL process completed successfully", "SUCCESS");
@@ -43,12 +41,5 @@ public class ETLRun {
         } catch (Exception e) {
             loggingService.logProcess("ETL Process", "ETL process failed: " + e.getMessage(), "ERROR");
         }
-    }
-
-    public static void main(String[] args) {
-        CrawlService crawlService = new CrawlService();
-        String path = "csv-data-sources/"+generateFileNameWithDate(LocalDate.of(2024,1,1));
-        crawlService.crawlDataAndExportCSV(path, LocalDate.of(2024,11,27));
-//        crawlService.crawlDataAndExportCSV("csv-data-sources/"+generateFileNameWithDate(LocalDate.now()), LocalDate.now());
     }
 }

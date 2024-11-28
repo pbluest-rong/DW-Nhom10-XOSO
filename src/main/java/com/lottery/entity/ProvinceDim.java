@@ -3,13 +3,14 @@ package com.lottery.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "province")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Entity
+@Table(name = "province")
 public class ProvinceDim {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

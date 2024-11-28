@@ -3,22 +3,26 @@ package com.lottery.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
 import java.util.Date;
-
-@Entity
-@Table(name = "lottery")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Entity
+@Table(name = "lottery")
 public class Lottery {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long province_id;
+    @ManyToOne
+    @JoinColumn(name = "province_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private ProvinceDim province;
+    @ManyToOne
+    @JoinColumn(name = "date_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private DateDim date;
     private Long date_id;
     @Column(name = "prize_special")
     private String prizeSpecial;

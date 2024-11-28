@@ -1,13 +1,18 @@
 package com.lottery.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
 @Entity
-@Data
 @Table(name = "file_logs")
 public class FileLogs {
 

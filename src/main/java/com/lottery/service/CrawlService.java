@@ -1,8 +1,8 @@
 package com.lottery.service;
 
-import com.lottery.entity.StagingLottery;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import com.opencsv.CSVWriterBuilder;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.File;
@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -21,7 +22,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class CrawlService {
+    private final LoggingService loggingService;
+
     @Value("${etl.head-url}")
     private String headURL = "https://www.xoso.net/getkqxs/";
     @Value("${etl.tail-url}")
@@ -83,11 +87,16 @@ public class CrawlService {
                 if (!csvFile.exists()) {
                     try {
                         csvFile.createNewFile();
-                        try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))) {
+                        try (
+//                                CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))
+                                CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
+                                        .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
+                                        .build();
+                        ) {
                             writer.writeNext(CSV_HEADER.toArray(new String[0]));
                             String[] newRecord = getDataFromWebsite(provinceURL, date);
                             System.out.println(newRecord);
-                            if (newRecord != null) {
+                            if (newRecord != null && newRecord[newRecord.length - 1] != null) {
                                 if (newRecord[newRecord.length - 1] != null)
                                     if (newRecord != null) {
                                         List<String[]> csvData = new ArrayList<>();
@@ -108,13 +117,18 @@ public class CrawlService {
                     List<String[]> csvData = readCSV(csvFilePath);
                     String[] newRecord = getDataFromWebsite(provinceURL, date);
                     System.out.println(newRecord);
-                    if (newRecord != null) {
+                    if (newRecord != null && newRecord[newRecord.length - 1] != null) {
                         // Kiểm tra xem đã có dữ liệu xổ số cho ngày này chưa
                         boolean isNewRecord = csvData.stream().noneMatch(record -> record[0].equals(provinceName) && record[10].equals(newRecord[newRecord.length - 1]));
                         if (isNewRecord) {
                             // Nếu có dữ liệu mới thì thêm vào
                             csvData.add(newRecord);
-                            try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))) {
+                            try (
+//                                CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))
+                                    CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
+                                            .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
+                                            .build();
+                            ) {
                                 writer.writeAll(csvData);
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -164,19 +178,19 @@ public class CrawlService {
             } else {
                 selectedDateText = null;
             }
-//            // Kiểm tra nếu selectedDateText là null hoặc không khớp với LocalDate date
-            if (selectedDateText == null) {
-                return null; // Nếu selectedDateText là null, trả về null
-            }
-            System.out.println("date: "+selectedDateText);
-//
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate selectedDate = LocalDate.parse(selectedDateText, formatter);
-//
-            // Nếu selectedDate không khớp với date, trả về null
-            if (!selectedDate.equals(date)) {
-                return null;
-            }
+////            // Kiểm tra nếu selectedDateText là null hoặc không khớp với LocalDate date
+//            if (selectedDateText == null) {
+//                return null; // Nếu selectedDateText là null, trả về null
+//            }
+//            System.out.println("date: "+selectedDateText);
+////
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+//            LocalDate selectedDate = LocalDate.parse(selectedDateText, formatter);
+////
+//            // Nếu selectedDate không khớp với date, trả về null
+//            if (!selectedDate.equals(date)) {
+//                return null;
+//            }
             data[10] = selectedDateText;
         } catch (Exception e) {
             e.printStackTrace();

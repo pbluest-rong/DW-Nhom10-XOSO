@@ -1,10 +1,15 @@
 package com.lottery.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
 @Entity
-@Data
 @Table(name = "configs")
 public class Configs {
 

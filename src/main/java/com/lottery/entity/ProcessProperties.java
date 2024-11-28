@@ -1,20 +1,18 @@
 package com.lottery.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "process_properties")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Entity
+@Table(name = "process_properties")
 public class ProcessProperties {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
