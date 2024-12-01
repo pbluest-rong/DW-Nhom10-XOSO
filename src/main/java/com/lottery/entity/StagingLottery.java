@@ -1,14 +1,12 @@
 package com.lottery.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Entity
 @Table(name = "staging_lottery")
 public class StagingLottery {
@@ -36,6 +34,4 @@ public class StagingLottery {
     @Column(name = "prize_eight")
     private String prizeEight;
     private String date;
-    @Column(name = "created_at")
-    private String createdAt;
 }

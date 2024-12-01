@@ -1,5 +1,7 @@
 package com.lottery.service;
 
+import com.lottery.entity.Config;
+import com.lottery.entity.Log;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.CSVWriterBuilder;
@@ -24,152 +26,120 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CrawlService {
-    private final LoggingService loggingService;
-
-    @Value("${etl.head-url}")
-    private String headURL = "https://www.xoso.net/getkqxs/";
-    @Value("${etl.tail-url}")
-    private String tailURL = ".js";
-
-    private static Map<String, String> provinceInURL = new HashMap<String, String>();
-
-    static {
-        provinceInURL.put("mien-bac", "Miền Bắc");
-        provinceInURL.put("an-giang", "An Giang");
-        provinceInURL.put("bac-lieu", "Bạc Liêu");
-        provinceInURL.put("ben-tre", "Bến Tre");
-        provinceInURL.put("binh-dinh", "Bình Định");
-        provinceInURL.put("binh-duong", "Bình Dương");
-        provinceInURL.put("binh-phuoc", "Bình Phước");
-        provinceInURL.put("binh-thuan", "Bình Thuận");
-        provinceInURL.put("ca-mau", "Cà Mau");
-        provinceInURL.put("can-tho", "Cần Thơ");
-        provinceInURL.put("da-lat", "Đà Lạt");
-        provinceInURL.put("da-nang", "Đà Nẵng");
-        provinceInURL.put("dak-lak", "Đắk Lắk");
-        provinceInURL.put("dak-nong", "Đắk Nông");
-        provinceInURL.put("dong-nai", "Đồng Nai");
-        provinceInURL.put("dong-thap", "Đồng Tháp");
-        provinceInURL.put("gia-lai", "Gia Lai");
-        provinceInURL.put("hau-giang", "Hậu Giang");
-        provinceInURL.put("khanh-hoa", "Khánh Hòa");
-        provinceInURL.put("kien-giang", "Kiên Giang");
-        provinceInURL.put("kon-tum", "Kon Tum");
-        provinceInURL.put("long-an", "Long An");
-        provinceInURL.put("ninh-thuan", "Ninh Thuận");
-        provinceInURL.put("phu-yen", "Phú Yên");
-        provinceInURL.put("quang-binh", "Quảng Bình");
-        provinceInURL.put("quang-nam", "Quảng Nam");
-        provinceInURL.put("quang-ngai", "Quảng Ngãi");
-        provinceInURL.put("quang-tri", "Quảng Trị");
-        provinceInURL.put("soc-trang", "Sóc Trăng");
-        provinceInURL.put("tay-ninh", "Tây Ninh");
-        provinceInURL.put("thua-thien-hue", "Thừa Thiên Huế");
-        provinceInURL.put("tien-giang", "Tiền Giang");
-        provinceInURL.put("tp-hcm", "TP. HCM");
-        provinceInURL.put("tra-vinh", "Trà Vinh");
-        provinceInURL.put("vinh-long", "Vĩnh Long");
-        provinceInURL.put("vung-tau", "Vũng Tàu");
-    }
-
+    private final ControlService controlService;
     private final List<String> CSV_HEADER = Arrays.asList(
             "province", "prize_special", "prize_one", "prize_two", "prize_three",
             "prize_four", "prize_five", "prize_six", "prize_seven", "prize_eight", "date"
     );
 
-    public void crawlDataAndExportCSV(String csvFilePath, LocalDate date) {
-        for (Map.Entry<String, String> entry : provinceInURL.entrySet()) {
-            String provinceURL = entry.getKey();
-            String provinceName = entry.getValue();
+    /**
+     * Phương thức crawl dữ liệu từ website và xuất dữ liệu vào file CSV.
+     *
+     * @param config cấu hình cần crawl
+     */
+    public void crawlDataAndExportCSV(Config config) {
+        if (config.getType() == Config.Type.CRAWL_DATA) {
+            String url = config.getSource();
+            String csvFilePath = config.getSourceLocation();
+            String province = config.getProvince();
+
             try {
                 File csvFile = new File(csvFilePath);
-                // Nếu file không tồn tại, tạo mới file và ghi header (nếu cần thiết)
+                // Nếu file không tồn tại, tạo mới file và ghi header
                 if (!csvFile.exists()) {
                     try {
                         csvFile.createNewFile();
                         try (
-//                                CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))
                                 CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
                                         .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
                                         .build();
                         ) {
+                            // Ghi header vào file CSV
                             writer.writeNext(CSV_HEADER.toArray(new String[0]));
-                            String[] newRecord = getDataFromWebsite(provinceURL, date);
+                            // Lấy dữ liệu từ website
+                            String[] newRecord = getDataFromWebsite(config);
                             System.out.println(newRecord);
                             if (newRecord != null && newRecord[newRecord.length - 1] != null) {
                                 if (newRecord[newRecord.length - 1] != null)
                                     if (newRecord != null) {
                                         List<String[]> csvData = new ArrayList<>();
                                         csvData.add(newRecord);
+                                        // Ghi dữ liệu vào file CSV
                                         writer.writeAll(csvData);
+                                        // Ghi log thành công vào bảng log thông qua controlService
+                                        Long fileSize = csvFile.length();
+                                        controlService.insertLog(config, csvFilePath, LocalDate.now(),
+                                                Log.LogStatus.SUCCESS, 1,
+                                                fileSize, "Crawl dữ liệu và ghi vào file CSV thành công.");
                                     }
                             }
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi ghi dữ liệu vào file CSV: " + e.getMessage());
                         }
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        // Log lỗi khi không tạo được file CSV
+                        controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Không thể tạo file CSV: " + e.getMessage());
                     }
                 }
-                // Nếu file đã tồn tại
+                // Nếu file CSV đã tồn tại, đọc dữ liệu và thêm dữ liệu mới
                 else {
                     //Load dữ liệu của file
                     List<String[]> csvData = readCSV(csvFilePath);
-                    String[] newRecord = getDataFromWebsite(provinceURL, date);
+                    String[] newRecord = getDataFromWebsite(config);
                     System.out.println(newRecord);
                     if (newRecord != null && newRecord[newRecord.length - 1] != null) {
-                        // Kiểm tra xem đã có dữ liệu xổ số cho ngày này chưa
-                        boolean isNewRecord = csvData.stream().noneMatch(record -> record[0].equals(provinceName) && record[10].equals(newRecord[newRecord.length - 1]));
-                        if (isNewRecord) {
-                            // Nếu có dữ liệu mới thì thêm vào
-                            csvData.add(newRecord);
-                            try (
-//                                CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))
-                                    CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
-                                            .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
-                                            .build();
-                            ) {
-                                writer.writeAll(csvData);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            System.out.println("Thêm 1 dữ liệu mới vào file: " + provinceName);
-                        } else {
-                            System.out.println("Dữ liệu của " + provinceName + " vào " + date + " đã tồn tại trong file: " + newRecord[newRecord.length - 1]);
+                        // Nếu có dữ liệu mới thì thêm vào
+                        csvData.add(newRecord);
+                        try (
+                                CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
+                                        .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
+                                        .build();
+                        ) {
+                            // Ghi dữ liệu vào file CSV
+                            writer.writeAll(csvData);
+                            // Ghi log thành công vào bảng log thông qua controlService
+                            Long fileSize = csvFile.length();
+                            controlService.insertLog(config, csvFilePath, LocalDate.now(),
+                                    Log.LogStatus.SUCCESS, csvData.size() + 1,
+                                    fileSize, "Crawl dữ liệu và ghi vào file CSV thành công.");
+                        } catch (IOException e) {
+                            // Log lỗi khi ghi dữ liệu vào file CSV
+                            controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi ghi dữ liệu vào file CSV: " + e.getMessage());
                         }
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                // Log lỗi tổng quan trong quá trình crawl dữ liệu
+                controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi crawl dữ liệu từ website: " + e.getMessage());
             }
         }
-
     }
 
-    private String getFullURL(String province, LocalDate date) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        String formattedDate = date.format(formatter);
-        return (province == null) ? null : headURL + province + "/" + formattedDate + tailURL;
-    }
-
-    private String[] getDataFromWebsite(String province, LocalDate date) {
+    /**
+     * Phương thức lấy dữ liệu từ website và trả về mảng các chuỗi.
+     *
+     * @param config config
+     * @return mảng các chuỗi chứa dữ liệu từ website
+     */
+    private String[] getDataFromWebsite(Config config) {
+        String url = config.getSource();
+        String province = config.getProvince();
         String[] data = new String[11];
         try {
-            String url = getFullURL(province, date);
             if (url == null) return data;
-
-            // Kết nối để lấy dữ liệu => dữ liệu lưu trữ trong mảng targetClasses
+            System.out.println("URL: " + url);
             Document doc = Jsoup.connect(url).get();
             String[] targetClasses = {"giaidb", "giai1", "giai2", "giai3", "giai4", "giai5", "giai6", "giai7", "giai8"};
-            data[0] = provinceInURL.get(province);
+            data[0] = province;
             int index = 1;
-
+            // Lấy dữ liệu từ các lớp HTML tương ứng với giải thưởng
             for (String className : targetClasses) {
                 Elements tds = doc.select("td." + className);
                 for (Element td : tds) {
                     data[index++] = td.text(); // Lưu nội dung giải vào mảng
                 }
             }
+            // Lấy ngày quay thưởng từ phần tử HTML
             Element selectElement = doc.getElementById("box_kqxs_ngay");
             Element selectedOption = selectElement.selectFirst("option[selected]");
             String selectedDateText = null;
@@ -178,26 +148,19 @@ public class CrawlService {
             } else {
                 selectedDateText = null;
             }
-////            // Kiểm tra nếu selectedDateText là null hoặc không khớp với LocalDate date
-//            if (selectedDateText == null) {
-//                return null; // Nếu selectedDateText là null, trả về null
-//            }
-//            System.out.println("date: "+selectedDateText);
-////
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-//            LocalDate selectedDate = LocalDate.parse(selectedDateText, formatter);
-////
-//            // Nếu selectedDate không khớp với date, trả về null
-//            if (!selectedDate.equals(date)) {
-//                return null;
-//            }
             data[10] = selectedDateText;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {// Log lỗi khi không thể lấy dữ liệu từ website
+            controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi lấy dữ liệu từ website: " + e.getMessage());
         }
         return data;
     }
 
+    /**
+     * Đọc dữ liệu từ file CSV.
+     *
+     * @param filePath đường dẫn đến file CSV
+     * @return danh sách các dòng dữ liệu trong file CSV
+     */
     private static List<String[]> readCSV(String filePath) {
         List<String[]> records = new ArrayList<>();
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {

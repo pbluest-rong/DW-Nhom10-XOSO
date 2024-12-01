@@ -11,6 +11,5 @@ spring:
     show-sql: true
 
 etl:
-  datasources-hub: "csv-data-sources/"
-  head-url: "https://www.xoso.net/getkqxs/"
-  tail-url: ".js"
+  schedule: false
+  configId: 112
