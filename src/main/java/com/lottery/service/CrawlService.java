@@ -38,80 +38,84 @@ public class CrawlService {
      * @param config cấu hình cần crawl
      */
     public void crawlDataAndExportCSV(Config config) {
-        if (config.getType() == Config.Type.CRAWL_DATA) {
-            String url = config.getSource();
-            String csvFilePath = config.getSourceLocation();
-            String province = config.getProvince();
+        // 1. Khởi tạo các biến từ config
+        String url = config.getSource();
+        String csvFilePath = config.getSourceLocation();
+        String province = config.getProvince();
 
+        File csvFile = new File(csvFilePath);
+        // 2. Kiểm tra sự tồn tại của file CSV
+        if (!csvFile.exists()) {
             try {
-                File csvFile = new File(csvFilePath);
-                // Nếu file không tồn tại, tạo mới file và ghi header
-                if (!csvFile.exists()) {
-                    try {
-                        csvFile.createNewFile();
-                        try (
-                                CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
-                                        .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
-                                        .build();
-                        ) {
-                            // Ghi header vào file CSV
-                            writer.writeNext(CSV_HEADER.toArray(new String[0]));
-                            // Lấy dữ liệu từ website
-                            String[] newRecord = getDataFromWebsite(config);
-                            System.out.println(newRecord);
-                            if (newRecord != null && newRecord[newRecord.length - 1] != null) {
-                                if (newRecord[newRecord.length - 1] != null)
-                                    if (newRecord != null) {
-                                        List<String[]> csvData = new ArrayList<>();
-                                        csvData.add(newRecord);
-                                        // Ghi dữ liệu vào file CSV
-                                        writer.writeAll(csvData);
-                                        // Ghi log thành công vào bảng log thông qua controlService
-                                        Long fileSize = csvFile.length();
-                                        controlService.insertLog(config, csvFilePath, LocalDate.now(),
-                                                Log.LogStatus.SUCCESS, 1,
-                                                fileSize, "Crawl dữ liệu và ghi vào file CSV thành công.");
-                                    }
-                            }
-                        } catch (IOException e) {
-                            controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi ghi dữ liệu vào file CSV: " + e.getMessage());
-                        }
-                    } catch (IOException e) {
-                        // Log lỗi khi không tạo được file CSV
-                        controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Không thể tạo file CSV: " + e.getMessage());
-                    }
-                }
-                // Nếu file CSV đã tồn tại, đọc dữ liệu và thêm dữ liệu mới
-                else {
-                    //Load dữ liệu của file
-                    List<String[]> csvData = readCSV(csvFilePath);
+                // 3. Tạo file CSV mới
+                csvFile.createNewFile();
+                try (
+                        CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
+                                .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
+                                .build();
+                ) {
+                    // 3.1 Ghi dòng tiêu đề (header) vào file
+                    writer.writeNext(CSV_HEADER.toArray(new String[0]));
+                    // 4. Lấy dữ liệu từ website
                     String[] newRecord = getDataFromWebsite(config);
-                    System.out.println(newRecord);
                     if (newRecord != null && newRecord[newRecord.length - 1] != null) {
-                        // Nếu có dữ liệu mới thì thêm vào
-                        if (isRecordExist(csvData, newRecord))
-                            csvData.add(newRecord);
-                        try (
-                                CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
-                                        .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
-                                        .build();
-                        ) {
-                            // Ghi dữ liệu vào file CSV
-                            writer.writeAll(csvData);
-                            // Ghi log thành công vào bảng log thông qua controlService
-                            Long fileSize = csvFile.length();
-                            controlService.insertLog(config, csvFilePath, LocalDate.now(),
-                                    Log.LogStatus.SUCCESS, csvData.size() + 1,
-                                    fileSize, "Crawl dữ liệu và ghi vào file CSV thành công.");
-                        } catch (IOException e) {
-                            // Log lỗi khi ghi dữ liệu vào file CSV
-                            controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi ghi dữ liệu vào file CSV: " + e.getMessage());
-                        }
+                        // 5.1 Ghi dữ liệu vào file CSV
+                        List<String[]> csvData = new ArrayList<>();
+                        csvData.add(newRecord);
+                        writer.writeAll(csvData);
+                        // 5.2 Ghi log thành công vào bảng log
+                        Long fileSize = csvFile.length();
+                        controlService.insertLog(config, csvFilePath, LocalDate.now(),
+                                Log.LogStatus.SUCCESS, 1,
+                                fileSize, "Crawl dữ liệu và ghi vào file CSV thành công.");
+                    } else {
+                        // 5.3 Ghi log thất bại nếu không lấy được dữ liệu
+                        controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi lấy dữ liệu từ URL.");
                     }
+                } catch (IOException e) {
+                    // 5.4 Ghi log thất bại nếu lỗi khi ghi file
+                    controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi ghi dữ liệu vào file CSV: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                // Log lỗi tổng quan trong quá trình crawl dữ liệu
-                controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi crawl dữ liệu từ website: " + e.getMessage());
+            } catch (IOException e) {
+                // 3.2 Ghi log thất bại nếu lỗi khi tạo file
+                controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Không thể tạo file CSV: " + e.getMessage());
+            }
+        } else {
+            // 6. Đọc dữ liệu từ file CSV hiện có
+            List<String[]> csvData = readCSV(csvFilePath);
+            // 7. Lấy dữ liệu mới từ website
+            String[] newRecord = getDataFromWebsite(config);
+            if (newRecord != null && newRecord[newRecord.length - 1] != null) {
+                // 8. Kiểm tra bản ghi mới đã tồn tại hay chưa
+                if (isRecordExist(csvData, newRecord)) {
+                    // 8.1 Thêm bản ghi mới vào danh sách
+                    csvData.add(newRecord);
+                    // 8.2 Ghi tất cả dữ liệu vào file CSV
+                    try (
+                            CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
+                                    .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
+                                    .build();
+                    ) {
+                        writer.writeAll(csvData);
+                        // 8.3 Ghi log thành công vào bảng log
+                        Long fileSize = csvFile.length();
+                        controlService.insertLog(config, csvFilePath, LocalDate.now(),
+                                Log.LogStatus.SUCCESS, csvData.size() + 1,
+                                fileSize, "Crawl dữ liệu và ghi vào file CSV thành công.");
+                    } catch (IOException e) {
+                        // 8.4 Ghi log thất bại nếu lỗi khi ghi file
+                        controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi khi ghi dữ liệu vào file CSV: " + e.getMessage());
+                    }
+                } else {
+                    // 8.5 Ghi log thành công nếu dữ liệu đã tồn tại
+                    Long fileSize = csvFile.length();
+                    controlService.insertLog(config, csvFilePath, LocalDate.now(),
+                            Log.LogStatus.SUCCESS, csvData.size() + 1,
+                            fileSize, "Dữ liệu đã tồn tại, không cần ghi thêm.");
+                }
+            } else {
+                // 7.1 Ghi log thất bại nếu không lấy được dữ liệu
+                controlService.insertLog(config, config.getSourceLocation(), LocalDate.now(), Log.LogStatus.FAILURE, null, null, "Lỗi lấy dữ liệu từ URL.");
             }
         }
     }
@@ -128,7 +132,6 @@ public class CrawlService {
         String[] data = new String[11];
         try {
             if (url == null) return data;
-            System.out.println("URL: " + url);
             Document doc = Jsoup.connect(url).get();
             String[] targetClasses = {"giaidb", "giai1", "giai2", "giai3", "giai4", "giai5", "giai6", "giai7", "giai8"};
             data[0] = province;

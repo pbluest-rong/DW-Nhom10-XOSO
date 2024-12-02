@@ -21,7 +21,7 @@ public class Config {
     private Type type;
 
     @Column(length = 255)
-    private String source;//url
+    private String source;
 
     @Column(name = "create_at")
     private LocalDate createAt;

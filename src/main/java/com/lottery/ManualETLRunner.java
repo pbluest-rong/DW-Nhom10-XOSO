@@ -28,23 +28,21 @@ public class ManualETLRunner {
     private final LoadToStagingService loadToStagingService;
 
     public void runETLProcess() {
+        // 1. Tự động tạo configs cho ngày cụ thể
         controlService.autoCreateConfigs(LocalDate.of(2024, 11, 30));
-        // Lấy danh sách unfinished configs
+        // 2. Lấy danh sách cấu hình chưa hoàn thành
         List<Config> unfinishedConfigs = controlService.getUnfinishedConfigs();
-        System.out.println(unfinishedConfigs);
-
-        // Nhóm configs theo Type
+        // 3. Nhóm các cấu hình theo loại
         Map<Config.Type, List<Config>> groupedConfigs = unfinishedConfigs.stream()
                 .filter(Objects::nonNull) // Lọc bỏ các config null
                 .collect(Collectors.groupingBy(Config::getType));
-
-        // Xử lý từng nhóm
+        // 3.1 CRAWL_DATA
         groupedConfigs.getOrDefault(Config.Type.CRAWL_DATA, List.of())
                 .forEach(crawlService::crawlDataAndExportCSV);
-
+        // 3.2 LOAD_TO_STAGING
         groupedConfigs.getOrDefault(Config.Type.LOAD_TO_STAGING, List.of())
                 .forEach(loadToStagingService::loadDataToStaging);
-
+        // 3.3 LOAD_TO_DW
         groupedConfigs.getOrDefault(Config.Type.LOAD_TO_DW, List.of())
                 .forEach(loadToDWService::transformAndLoadDataToWarehouse);
     }
