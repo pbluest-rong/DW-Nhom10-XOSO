@@ -10,10 +10,12 @@ import java.util.List;
 
 public interface ConfigRepository extends JpaRepository<Config, Long> {
     @Query("SELECT c FROM Config c WHERE c.id NOT IN (" +
-            "SELECT l.config.id FROM Log l WHERE l.status = 'SUCCESS')")
+            "SELECT l.config.id FROM Log l WHERE l.status = 'SUCCESS')" +
+            " ORDER BY c.createAt ASC")
     List<Config> findUnfinishedConfigs();
 
     @Query("SELECT c FROM Config c WHERE c.createAt = :date AND c.id NOT IN (" +
-            "SELECT l.config.id FROM Log l WHERE l.status = 'SUCCESS')")
+            "SELECT l.config.id FROM Log l WHERE l.status = 'SUCCESS')" +
+            " ORDER BY c.createAt ASC")
     List<Config> findUnfinishedConfigs(@Param("date") LocalDate date);
 }

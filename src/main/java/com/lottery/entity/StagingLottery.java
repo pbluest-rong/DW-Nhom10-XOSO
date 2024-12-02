@@ -3,6 +3,8 @@ package com.lottery.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -15,6 +17,7 @@ public class StagingLottery {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String province;
+    private String date;
     @Column(name = "prize_special")
     private String prizeSpecial;
     @Column(name = "prize_one")
@@ -33,5 +36,7 @@ public class StagingLottery {
     private String prizeSeven;
     @Column(name = "prize_eight")
     private String prizeEight;
-    private String date;
+
+    @Column(name = "create_at")
+    private LocalDate createAt;
 }

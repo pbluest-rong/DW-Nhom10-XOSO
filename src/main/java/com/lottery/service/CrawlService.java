@@ -89,7 +89,8 @@ public class CrawlService {
                     System.out.println(newRecord);
                     if (newRecord != null && newRecord[newRecord.length - 1] != null) {
                         // Nếu có dữ liệu mới thì thêm vào
-                        csvData.add(newRecord);
+                        if (isRecordExist(csvData, newRecord))
+                            csvData.add(newRecord);
                         try (
                                 CSVWriter writer = (CSVWriter) new CSVWriterBuilder(new FileWriter(csvFilePath))
                                         .withQuoteChar(CSVWriter.NO_QUOTE_CHARACTER)  // Tắt dấu ngoặc kép
@@ -172,5 +173,29 @@ public class CrawlService {
             e.printStackTrace();
         }
         return records;
+    }
+
+    /**
+     * Phương thức kiểm tra xem bản ghi đã tồn tại trong file CSV hay chưa.
+     *
+     * @param csvData   danh sách dữ liệu đã đọc từ file CSV
+     * @param newRecord bản ghi mới cần kiểm tra
+     * @return true nếu bản ghi đã tồn tại, false nếu chưa tồn tại
+     */
+    private boolean isRecordExist(List<String[]> csvData, String[] newRecord) {
+        for (String[] record : csvData) {
+            boolean isDuplicate = true;
+            // Kiểm tra tất cả các cột
+            for (int i = 0; i < record.length; i++) {
+                if (!record[i].equals(newRecord[i])) {
+                    isDuplicate = false;
+                    break; // Nếu có bất kỳ cột nào khác nhau, không phải là bản sao
+                }
+            }
+            if (isDuplicate) {
+                return true; // Nếu tất cả các cột giống nhau, là bản sao
+            }
+        }
+        return false; // Nếu không tìm thấy bản sao
     }
 }

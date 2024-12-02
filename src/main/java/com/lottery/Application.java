@@ -18,13 +18,8 @@ import java.time.LocalDate;
 @EnableScheduling
 @RequiredArgsConstructor
 public class Application {
-    @Value("${etl.schedule}")
-    private boolean schedule = false;
-    @Value("${etl.configId}")
-    private Long configId = null;
-
-    private final ControlService controlService;
-    private final CrawlService crawlService;
+    @Value("${etl.isManualETL}")
+    private boolean isManualETL = false;
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
@@ -33,9 +28,8 @@ public class Application {
     @Bean
     public CommandLineRunner run(ManualETLRunner manualETLRunner) {
         return args -> {
-            if (schedule == false && configId != null) {
-                Config config = controlService.getConfigById(configId);
-                manualETLRunner.runETLProcess(config);
+            if (isManualETL) {
+                manualETLRunner.runETLProcess();
             }
         };
     }

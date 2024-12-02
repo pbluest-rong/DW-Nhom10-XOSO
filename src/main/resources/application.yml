@@ -11,5 +11,6 @@ spring:
     show-sql: true
 etl:
   resource-parent: D:\DW
-  schedule: false
-  configId: 112
+  destination-table-staging: staging_lottery
+  destination-table-dw: lottery
+  isManualETL: true

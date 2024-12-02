@@ -42,17 +42,8 @@ public class Lottery {
     private String prizeSeven;
     @Column(name = "prize_eight")
     private String prizeEight;
-    @Column(name = "created_at", updatable = false)
-    private Date createdAt;
-
-    private boolean isDelete;
-
+    @Column(name = "modify_date")
+    private Date modifyDate;
     @Column(name = "date_delete")
     private Date dateDelete;
-
-    @Column(name = "date_insert")
-    private Timestamp dateInsert;
-
-    @Column(name = "expired_date")
-    private Date expiredDate;
 }

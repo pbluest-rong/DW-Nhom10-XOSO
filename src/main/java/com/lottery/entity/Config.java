@@ -48,4 +48,20 @@ public class Config {
         LOAD_TO_STAGING,
         LOAD_TO_DW
     }
+
+    @Override
+    public String toString() {
+        return "Config{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", type=" + type +
+                ", source='" + source + '\'' +
+                ", createAt=" + createAt +
+                ", province='" + province + '\'' +
+                ", sourceLocation='" + sourceLocation + '\'' +
+                ", procedureName='" + procedureName + '\'' +
+                ", destinationTableStaging='" + destinationTableStaging + '\'' +
+                ", destinationTableDW='" + destinationTableDW + '\'' +
+                '}';
+    }
 }

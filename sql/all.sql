@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 30, 2024 at 01:43 PM
+-- Generation Time: Dec 02, 2024 at 07:40 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -31,14 +31,15 @@ USE `lottery_db`;
 
 CREATE TABLE `config` (
                           `id` bigint(20) NOT NULL,
-                          `destination_table_dw` varchar(255) DEFAULT NULL,
-                          `destination_table_staging` varchar(255) DEFAULT NULL,
+                          `type` enum('CRAWL_DATA','LOAD_TO_DW','LOAD_TO_STAGING') DEFAULT NULL,
+                          `create_at` date DEFAULT NULL,
                           `name` varchar(255) NOT NULL,
-                          `procedure_name` varchar(255) DEFAULT NULL,
                           `province` varchar(255) DEFAULT NULL,
                           `source` varchar(255) DEFAULT NULL,
                           `source_location` varchar(255) DEFAULT NULL,
-                          `type` enum('CRAWL_DATA','LOAD_TO_DW','LOAD_TO_STAGING') DEFAULT NULL
+                          `procedure_name` varchar(255) DEFAULT NULL,
+                          `destination_table_dw` varchar(255) DEFAULT NULL,
+                          `destination_table_staging` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -62,14 +63,14 @@ CREATE TABLE `date` (
 
 CREATE TABLE `log` (
                        `id` bigint(20) NOT NULL,
-                       `count` varchar(255) DEFAULT NULL,
+                       `id_config` bigint(20) NOT NULL,
                        `date` date NOT NULL,
-                       `dt_update` date NOT NULL,
-                       `file_size` float NOT NULL,
-                       `filename` varchar(255) DEFAULT NULL,
-                       `message` varchar(255) DEFAULT NULL,
+                       `province` varchar(255) DEFAULT NULL,
                        `status` enum('FAILURE','IN_PROGRESS','PENDING','SUCCESS') DEFAULT NULL,
-                       `id_config` bigint(20) NOT NULL
+                       `count` int(11) DEFAULT NULL,
+                       `file_size` bigint(20) DEFAULT NULL,
+                       `message` varchar(255) DEFAULT NULL,
+                       `dt_update` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -80,22 +81,19 @@ CREATE TABLE `log` (
 
 CREATE TABLE `lottery` (
                            `id` bigint(20) NOT NULL,
-                           `created_at` datetime(6) DEFAULT NULL,
-                           `date_delete` datetime(6) DEFAULT NULL,
-                           `date_insert` datetime(6) DEFAULT NULL,
+                           `province_id` bigint(20) DEFAULT NULL,
                            `date_id` bigint(20) DEFAULT NULL,
-                           `expired_date` datetime(6) DEFAULT NULL,
-                           `is_delete` bit(1) NOT NULL,
-                           `prize_eight` varchar(255) DEFAULT NULL,
-                           `prize_five` varchar(255) DEFAULT NULL,
-                           `prize_four` varchar(255) DEFAULT NULL,
-                           `prize_one` varchar(255) DEFAULT NULL,
-                           `prize_seven` varchar(255) DEFAULT NULL,
-                           `prize_six` varchar(255) DEFAULT NULL,
                            `prize_special` varchar(255) DEFAULT NULL,
-                           `prize_three` varchar(255) DEFAULT NULL,
+                           `prize_one` varchar(255) DEFAULT NULL,
                            `prize_two` varchar(255) DEFAULT NULL,
-                           `province_id` bigint(20) DEFAULT NULL
+                           `prize_three` varchar(255) DEFAULT NULL,
+                           `prize_four` varchar(255) DEFAULT NULL,
+                           `prize_five` varchar(255) DEFAULT NULL,
+                           `prize_six` varchar(255) DEFAULT NULL,
+                           `prize_seven` varchar(255) DEFAULT NULL,
+                           `prize_eight` varchar(255) DEFAULT NULL,
+                           `date_delete` datetime(6) DEFAULT NULL,
+                           `modify_date` datetime(6) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -117,18 +115,18 @@ CREATE TABLE `province` (
 
 CREATE TABLE `staging_lottery` (
                                    `id` bigint(20) NOT NULL,
-                                   `created_at` varchar(255) DEFAULT NULL,
+                                   `province` varchar(255) DEFAULT NULL,
                                    `date` varchar(255) DEFAULT NULL,
-                                   `prize_eight` varchar(255) DEFAULT NULL,
-                                   `prize_five` varchar(255) DEFAULT NULL,
-                                   `prize_four` varchar(255) DEFAULT NULL,
-                                   `prize_one` varchar(255) DEFAULT NULL,
-                                   `prize_seven` varchar(255) DEFAULT NULL,
-                                   `prize_six` varchar(255) DEFAULT NULL,
                                    `prize_special` varchar(255) DEFAULT NULL,
-                                   `prize_three` varchar(255) DEFAULT NULL,
+                                   `prize_one` varchar(255) DEFAULT NULL,
                                    `prize_two` varchar(255) DEFAULT NULL,
-                                   `province` varchar(255) DEFAULT NULL
+                                   `prize_three` varchar(255) DEFAULT NULL,
+                                   `prize_four` varchar(255) DEFAULT NULL,
+                                   `prize_five` varchar(255) DEFAULT NULL,
+                                   `prize_six` varchar(255) DEFAULT NULL,
+                                   `prize_seven` varchar(255) DEFAULT NULL,
+                                   `prize_eight` varchar(255) DEFAULT NULL,
+                                   `create_at` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -236,95 +234,85 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
--- Chuyển sang cơ sở dữ liệu 'lottery_db'
-USE lottery_db;
 
--- Xóa thủ tục nếu nó đã tồn tại
 DROP PROCEDURE IF EXISTS transform_load_data_to_warehouse;
-
 DELIMITER $$
 
--- Tạo thủ tục transform_load_data_to_warehouse
 CREATE PROCEDURE transform_load_data_to_warehouse()
 BEGIN
-    DECLARE curr_date DATE;
-    SET curr_date = CURDATE(); -- Lấy ngày hiện tại
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        ROLLBACK;
 
-    -- Bước 1: Chèn các tỉnh duy nhất vào bảng 'province' nếu chưa có
-INSERT INTO province (name)
+    -- Bắt đầu giao dịch
+START TRANSACTION;
+
+-- Bước 1: Chèn các tỉnh duy nhất vào bảng 'province' nếu chưa có
+INSERT IGNORE INTO province (name)
 SELECT DISTINCT province
-FROM staging_lottery
-WHERE province NOT IN (SELECT name FROM province);
+FROM staging_lottery;
 
 -- Bước 2: Chèn các ngày duy nhất vào bảng 'date' nếu chưa có
-INSERT INTO date (day, month, year)
+INSERT IGNORE INTO date (day, month, year)
 SELECT DISTINCT
     DAY(STR_TO_DATE(date, '%d/%m/%Y')) AS day,
     MONTH(STR_TO_DATE(date, '%d/%m/%Y')) AS month,
     YEAR(STR_TO_DATE(date, '%d/%m/%Y')) AS year
-FROM staging_lottery
-WHERE (DAY(STR_TO_DATE(date, '%d/%m/%Y')),
-    MONTH(STR_TO_DATE(date, '%d/%m/%Y')),
-    YEAR(STR_TO_DATE(date, '%d/%m/%Y')))
-    NOT IN (SELECT day, month, year FROM date);
+FROM staging_lottery;
 
--- Bước 3: Cập nhật các bản ghi đã xóa trong bảng 'lottery'
-UPDATE lottery AS l
-    LEFT JOIN staging_lottery AS stg
-ON l.province_id = (SELECT id FROM province WHERE name = stg.province)
-    AND l.date_id = (SELECT id FROM date
-    WHERE day = DAY(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-    AND month = MONTH(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-    AND year = YEAR(STR_TO_DATE(stg.date, '%d/%m/%Y')))
-    SET l.is_delete = TRUE, -- Đánh dấu bản ghi là đã xóa
-        l.expired_date = curr_date,
-        l.date_delete = curr_date
-WHERE stg.id IS NULL AND l.is_delete = FALSE;
-
--- Bước 4: Chèn các bản ghi mới vào bảng 'lottery'
+-- Bước 3: Chèn hoặc cập nhật vào bảng 'lottery'
 INSERT INTO lottery (
     province_id, date_id, prize_special, prize_one, prize_two, prize_three,
     prize_four, prize_five, prize_six, prize_seven, prize_eight,
-    created_at, date_insert, is_delete
+    date_delete, modify_date
 )
 SELECT
-    (SELECT id FROM province WHERE name = stg.province) AS province_id,
-    (SELECT id FROM date
-     WHERE day = DAY(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-           AND month = MONTH(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-           AND year = YEAR(STR_TO_DATE(stg.date, '%d/%m/%Y'))) AS date_id,
-        stg.prize_special, stg.prize_one, stg.prize_two, stg.prize_three,
-        stg.prize_four, stg.prize_five, stg.prize_six, stg.prize_seven, stg.prize_eight,
-        NOW() AS created_at, NOW() AS date_insert, FALSE AS is_delete
-FROM staging_lottery AS stg
-    LEFT JOIN lottery AS l
-ON (SELECT id FROM province WHERE name = stg.province) = l.province_id
-    AND (SELECT id FROM date
-    WHERE day = DAY(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-    AND month = MONTH(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-    AND year = YEAR(STR_TO_DATE(stg.date, '%d/%m/%Y'))) = l.date_id
-WHERE l.id IS NULL;
+    p.id AS province_id,
+    d.id AS date_id,
+    stg.prize_special, stg.prize_one, stg.prize_two, stg.prize_three,
+    stg.prize_four, stg.prize_five, stg.prize_six, stg.prize_seven, stg.prize_eight,
+    NULL AS date_delete,
+    NOW() AS modify_date
+FROM staging_lottery stg
+         INNER JOIN province p ON p.name = stg.province
+         INNER JOIN date d ON d.day = DAY(STR_TO_DATE(stg.date, '%d/%m/%Y'))
+    AND d.month = MONTH(STR_TO_DATE(stg.date, '%d/%m/%Y'))
+    AND d.year = YEAR(STR_TO_DATE(stg.date, '%d/%m/%Y'))
+    LEFT JOIN lottery l ON l.province_id = p.id
+    AND l.date_id = d.id
+    AND l.prize_special = stg.prize_special
+    AND l.prize_one = stg.prize_one
+    AND l.prize_two = stg.prize_two
+    AND l.prize_three = stg.prize_three
+    AND l.prize_four = stg.prize_four
+    AND l.prize_five = stg.prize_five
+    AND l.prize_six = stg.prize_six
+    AND l.prize_seven = stg.prize_seven
+    AND l.prize_eight = stg.prize_eight
+WHERE l.id IS NULL; -- Chỉ chèn nếu không có bản ghi nào hoàn toàn trùng khớp
 
--- Bước 5: Cập nhật các bản ghi trong bảng 'lottery' nếu có thay đổi
-UPDATE lottery AS l
-    INNER JOIN staging_lottery AS stg
-ON l.province_id = (SELECT id FROM province WHERE name = stg.province)
-    AND l.date_id = (SELECT id FROM date
-    WHERE day = DAY(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-    AND month = MONTH(STR_TO_DATE(stg.date, '%d/%m/%Y'))
-    AND year = YEAR(STR_TO_DATE(stg.date, '%d/%m/%Y')))
-    SET l.prize_special = stg.prize_special,
-        l.prize_one = stg.prize_one,
-        l.prize_two = stg.prize_two,
-        l.prize_three = stg.prize_three,
-        l.prize_four = stg.prize_four,
-        l.prize_five = stg.prize_five,
-        l.prize_six = stg.prize_six,
-        l.prize_seven = stg.prize_seven,
-        l.prize_eight = stg.prize_eight,
-        l.expired_date = NULL, -- Reset ngày hết hạn
-        l.is_delete = FALSE; -- Đánh dấu là không bị xóa
+-- Bước 4: Xóa các bản ghi đã xử lý trong bảng 'staging_lottery'
+DELETE stg
+FROM staging_lottery stg
+INNER JOIN province p ON p.name = stg.province
+INNER JOIN date d ON d.day = DAY(STR_TO_DATE(stg.date, '%d/%m/%Y'))
+                  AND d.month = MONTH(STR_TO_DATE(stg.date, '%d/%m/%Y'))
+                  AND d.year = YEAR(STR_TO_DATE(stg.date, '%d/%m/%Y'))
+LEFT JOIN lottery l ON l.province_id = p.id
+                   AND l.date_id = d.id
+                   AND l.prize_special = stg.prize_special
+                   AND l.prize_one = stg.prize_one
+                   AND l.prize_two = stg.prize_two
+                   AND l.prize_three = stg.prize_three
+                   AND l.prize_four = stg.prize_four
+                   AND l.prize_five = stg.prize_five
+                   AND l.prize_six = stg.prize_six
+                   AND l.prize_seven = stg.prize_seven
+                   AND (l.prize_eight = stg.prize_eight OR (l.prize_eight IS NULL AND stg.prize_eight IS NULL)) -- Điều chỉnh này sẽ xử lý NULL
+WHERE l.id IS NOT NULL;
 
+
+    -- Kết thúc giao dịch
+COMMIT;
 END$$
 
 DELIMITER ;
