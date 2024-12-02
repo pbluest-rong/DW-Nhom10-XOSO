@@ -6,6 +6,7 @@ import com.lottery.service.CrawlService;
 import com.lottery.service.LoadToDWService;
 import com.lottery.service.LoadToStagingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.core.Local;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,10 @@ public class ScheduleETLRunner {
     private final CrawlService crawlService;
     private final LoadToDWService loadToDWService;
     private final LoadToStagingService loadToStagingService;
+
+
+    @Value("${etl.resource-parent}")
+    private boolean resourceParentPath;
 
     @Component
     public class ETLScheduler {
@@ -149,7 +154,7 @@ public class ScheduleETLRunner {
             config.setSource(url);
             config.setCreateAt(LocalDate.now());
             config.setProvince(provinceName);
-            config.setSourceLocation("D:\\DW\\" + formattedDate + "_XSVN.csv");
+            config.setSourceLocation(resourceParentPath +"\\" + formattedDate + "_XSVN.csv");
             config.setDestinationTableStaging("staging_lottery");
             config.setDestinationTableDW("lotterry");
             controlService.saveConfig(config);
