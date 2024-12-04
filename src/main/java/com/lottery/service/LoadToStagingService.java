@@ -6,14 +6,11 @@ import com.lottery.entity.StagingLottery;
 import com.lottery.repository.StagingLotteryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +24,7 @@ public class LoadToStagingService {
         // 1. Lấy đường dẫn file CSV từ config
         String csvFilePath = config.getSourceLocation();
 
-// 2. Bắt đầu giao dịch
+        // 2. Bắt đầu giao dịch
         jdbcTemplate.execute("START TRANSACTION");
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {

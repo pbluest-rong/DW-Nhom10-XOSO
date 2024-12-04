@@ -87,7 +87,7 @@ public class CrawlService {
             String[] newRecord = getDataFromWebsite(config);
             if (newRecord != null && newRecord[newRecord.length - 1] != null) {
                 // 8. Kiểm tra bản ghi mới đã tồn tại hay chưa
-                if (isRecordExist(csvData, newRecord)) {
+                if (!isRecordExist(csvData, newRecord)) {
                     // 8.1 Thêm bản ghi mới vào danh sách
                     csvData.add(newRecord);
                     // 8.2 Ghi tất cả dữ liệu vào file CSV
