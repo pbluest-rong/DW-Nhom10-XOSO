@@ -1,0 +1,136 @@
+/* Statistics.css */
+
+/* General layout */
+.statistics {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f9;
+    padding: 20px;
+    margin: 0 auto;
+    max-width: 1200px;
+}
+
+/* Title */
+.statistics h2 {
+    text-align: center;
+    color: #343a40;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Section titles */
+h3 {
+    font-size: 1.6rem;
+    margin-bottom: 15px;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* Statistics summary (Total draws and prize value) */
+.statistics-summary {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.statistics-summary p {
+    font-size: 1.1rem;
+    margin: 10px 0;
+    color: #495057;
+    line-height: 1.5;
+}
+
+/* Data list (Province and month data) */
+.province-month-data {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.province-month-data ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.province-month-data li {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #343a40;
+    font-weight: 500;
+}
+
+/* Chart containers */
+.chart-container {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.chart-container h3 {
+    margin-bottom: 20px;
+    color: #343a40;
+    font-size: 1.4rem;
+}
+
+/* Styling for the chart */
+canvas {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: 400px; /* Ensures the chart has a fixed height */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .statistics {
+        padding: 15px;
+    }
+
+    .statistics-summary p {
+        font-size: 1rem;
+    }
+
+    .province-month-data li {
+        font-size: 0.95rem;
+    }
+
+    .chart-container h3 {
+        font-size: 1.2rem;
+    }
+
+    canvas {
+        height: 300px; /* Adjusts chart size for mobile */
+    }
+}
+
+/* Color Palette */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #28a745;
+    --gray-dark: #343a40;
+    --gray-light: #f4f6f9;
+    --card-background: #ffffff;
+}
+
+/* Chart customizations */
+.chart-container .chartjs-legend {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #495057;
+    margin-top: 10px;
+}
+
+.chart-container .chartjs-tooltip {
+    background-color: #333;
+    color: #fff;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    padding: 10px;
+}
+

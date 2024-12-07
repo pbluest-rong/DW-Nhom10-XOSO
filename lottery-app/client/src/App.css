@@ -1,0 +1,96 @@
+/* src/App.css */
+
+/* General styling for App */
+.App {
+  text-align: center;
+}
+
+/* Styling for logo */
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tabs container */
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #007bff; /* Add a border under the tabs */
+}
+
+/* Styling for individual tab buttons */
+.tabs button {
+  padding: 10px 30px;
+  margin-right: 15px;
+  cursor: pointer;
+  background-color: #f0f0f0;
+  border: 2px solid #ddd;
+  border-radius: 10px 10px 0 0;
+  font-size: 16px;
+  color: black; /* Change text color to black */
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+
+/* Styling for active tab */
+.tabs button.active {
+  background-color: #007bff; /* Highlight active tab */
+  color: white; /* Change text color to white for active tab */
+  border-color: #007bff; /* Match border with active tab color */
+}
+
+/* Styling for inactive tabs on hover */
+.tabs button:hover {
+  background-color: #d9e7ff; /* Light blue background on hover */
+  border-color: #007bff; /* Add border color on hover */
+  color: #007bff; /* Change text color to blue on hover */
+}
+
+/* Optional: Add a shadow effect for tabs */
+.tabs button:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Blue shadow */
+}
+
+/* Styling for the statistics container */
+.statistics {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.statistics h2 {
+  margin-bottom: 10px;
+}
