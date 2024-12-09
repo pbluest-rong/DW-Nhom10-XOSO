@@ -14,9 +14,10 @@ const Statistics = () => {
         provinceMonthData: [] // Dữ liệu xổ số theo tỉnh và tháng
     });
 
-    // Lấy thống kê từ API
+    // 6. Gọi API từ Server (Lấy thống kê từ API)
     useEffect(() => {
         const fetchStatistics = async () => {
+            // Điều kiện: Kiểm tra các link get api
             try {
                 // Giả sử dữ liệu trả về là một mảng các thống kê theo tháng và tỉnh
                 const response = await fetch('http://localhost:5000/api/statistics');
@@ -57,6 +58,7 @@ const Statistics = () => {
                     provinceMonthData
                 });
             } catch (error) {
+                // 6.1. Giao diện trống & xuất ra console lỗi (do link không đúng)
                 console.error('Error fetching statistics:', error);
             }
         };
@@ -108,6 +110,7 @@ const Statistics = () => {
         ]
     };
 
+    // 6.2. Giao diện hiển thị có dữ liệu của statistics nếu không rơi vào error 6.1.
     return (
         <div className="statistics">
             <h2>Lottery Statistics</h2>

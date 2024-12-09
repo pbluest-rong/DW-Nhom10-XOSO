@@ -1,11 +1,11 @@
 // src/App.js
-
+// 5. App.js trong client sẽ được gọi để hiển thị giao diện
 import React, { useState } from 'react';
 import LotteryList from './components/LotteryList';
 import Statistics from './components/Statistics'; // Import component thống kê
 import './App.css'
 const App = () => {
-    // State để quản lý tab hiện tại
+    // State để quản lý tab hiện tại (mặc định khi run lên sẽ hiển thị lottery)
     const [activeTab, setActiveTab] = useState('lottery'); // 'lottery' hoặc 'statistics'
 
     return (
@@ -27,7 +27,6 @@ const App = () => {
                     Statistics
                 </button>
             </div>
-
             {/* Render tab content based on activeTab */}
             {activeTab === 'lottery' && <LotteryList />}
             {activeTab === 'statistics' && <Statistics />} {/* Render Statistics component */}

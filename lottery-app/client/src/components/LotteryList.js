@@ -12,8 +12,10 @@ const LotteryList = () => {
     const [searchTerm, setSearchTerm] = useState(''); // Track the search term
     const [filteredLotteries, setFilteredLotteries] = useState([]); // Store filtered lotteries
 
+    // 6. Gọi API từ Server để hiển thị danh sách bảng lottery
     useEffect(() => {
         // Fetch the lottery data from the API
+        // Điều kiện: Kiểm tra các link get api
         axios.get('http://localhost:5000/api/lottery')
             .then(response => {
                 setLotteries(response.data);  // Set the data into state
@@ -21,6 +23,7 @@ const LotteryList = () => {
                 setTotalPages(Math.ceil(response.data.length / itemsPerPage)); // Calculate total pages
             })
             .catch(error => {
+                // 6.1. Giao diện trống & xuất ra console lỗi (do link không đúng)
                 console.error('Error fetching lottery data:', error);
             });
     }, []);  // Empty dependency array means this runs once when the component mounts
@@ -59,6 +62,7 @@ const LotteryList = () => {
         }
     };
 
+    // 6.2. Giao diện hiển thị có dữ liệu của lottery nếu không rơi vào error 6.1.
     return (
         <div className="lottery-container">
 

@@ -1,3 +1,6 @@
+// 1. Khởi chạy server tại server.js trong server (chọn Current File và run tại đây)
+
+// 2. Import thư viện và tải các biến môi trường trong server.js
 const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
@@ -22,12 +25,15 @@ const db = mysql.createConnection({
     database: process.env.DB_NAME // Using environment variables
 });
 
-// Test DB connection
+// Điều kiện: Kiểm tra kết nối database (kiểm tra db với các thiết lập trong file server/.env)
 db.connect((err) => {
     if (err) {
+        // 2.1. Xuất ra console lỗi err nếu fail
         console.error('Error connecting to database: ', err);
+        // Đóng chương trình
         process.exit(1);
     }
+    // 2.2. Xuất ra console thành công
     console.log('Connected to MySQL database');
 });
 
@@ -100,7 +106,7 @@ app.get('/api/statistics', (req, res) => {
     });
 });
 
-// Start the server
+// 3. Server chạy với port 5000
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
