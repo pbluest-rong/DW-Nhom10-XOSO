@@ -43,7 +43,6 @@ public class LoadToStagingService {
                 }
                 // 14. Lưu xuống staging tương ứng với 1 dòng
                 try {
-                    // 5. Tạo đối tượng `StagingLottery` và gán dữ liệu từ dòng
                     StagingLottery stagingLottery = new StagingLottery();
                     stagingLottery.setProvince(values[0].trim());
                     stagingLottery.setPrizeSpecial(values[1].trim());
