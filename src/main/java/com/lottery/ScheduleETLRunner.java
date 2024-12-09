@@ -40,18 +40,17 @@ public class ScheduleETLRunner {
                 }
             }
         }
-        // Thực thi quá trình tải dữ liệu vào Staging lúc 16:40
+        // 1. Chạy Scheduler tải dữ liệu vào Staging vào lúc 16h40 hằng ngày
         @Scheduled(cron = "0 40 16 * * ?")
         public void scheduleLoadStagingProcess() {
-            // Lấy danh sách cấu hình chưa hoàn thành
+            // 2. Lấy danh sách config chưa có log trang thái hoàn thành
             List<Config> configList = controlService.getUnfinishedConfigs();
-            // Duyệt qua từng cấu hình và thực thi ETL
+            // 3. Tạo vòng lặp để duyệt từng config
+            // 4. Kiểm tra đã duyệt hết danh sách config
             for (Config config : configList) {
-                switch (config.getType()) {
-                    case LOAD_TO_STAGING:
-                        loadToStagingService.loadDataToStaging(config);
-                        break;
-                }
+                //5. Kiểm tra type của config là LOAD_TO_STAGING
+                if (config.getType() == Config.Type.LOAD_TO_STAGING)
+                    loadToStagingService.loadDataToStaging(config);
             }
         }
         // 1.Thực thi quá trình tải dữ liệu vào Data Warehouse lúc 16:50
