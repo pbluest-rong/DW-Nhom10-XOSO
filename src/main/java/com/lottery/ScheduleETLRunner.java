@@ -8,6 +8,7 @@ import com.lottery.service.LoadToStagingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -26,20 +27,20 @@ public class ScheduleETLRunner {
         public void scheduleAutoCreateConfig() {
             controlService.autoCreateConfigs(LocalDate.now());
         }
-        // Thực thi quá trình crawl dữ liệu vào lúc 16:30
+
+        // 1. Chạy Scheduler quá trình crawl dữ liệu vào lúc 16:30
         @Scheduled(cron = "0 30 16 * * ?")
         public void scheduleCrawlProcess() {
-            // Lấy danh sách cấu hình chưa hoàn thành
+            // 2. Lấy danh sách config chưa có log trang thái hoàn thành
             List<Config> configList = controlService.getUnfinishedConfigs();
-            // Duyệt qua từng cấu hình và thực thi ETL
+            // 3. Tạo vòng lặp để duyệt từng config
             for (Config config : configList) {
-                switch (config.getType()) {
-                    case CRAWL_DATA:
-                        crawlService.crawlDataAndExportCSV(config);
-                        break;
-                }
+                // 4. Kiểm tra type của config là CRAW_DATA
+                if (config.getType() == Config.Type.CRAWL_DATA)
+                    crawlService.crawlDataAndExportCSV(config);
             }
         }
+
         // 1. Chạy Scheduler tải dữ liệu vào Staging vào lúc 16h40 hằng ngày
         @Scheduled(cron = "0 40 16 * * ?")
         public void scheduleLoadStagingProcess() {
@@ -53,6 +54,7 @@ public class ScheduleETLRunner {
                     loadToStagingService.loadDataToStaging(config);
             }
         }
+
         // 1.Thực thi quá trình tải dữ liệu vào Data Warehouse lúc 16:50
         @Scheduled(cron = "0 50 16 * * ?")
         public void scheduleLoadDWProcess() {
