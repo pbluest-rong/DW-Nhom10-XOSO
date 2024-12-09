@@ -54,16 +54,20 @@ public class ScheduleETLRunner {
                 }
             }
         }
-        // Thực thi quá trình tải dữ liệu vào Data Warehouse lúc 16:50
+        // 1.Thực thi quá trình tải dữ liệu vào Data Warehouse lúc 16:50
         @Scheduled(cron = "0 50 16 * * ?")
         public void scheduleLoadDWProcess() {
-            // Lấy danh sách cấu hình chưa hoàn thành
+            // 2.Lấy danh sách và kiểm tra cấu hình chưa hoàn thành
             List<Config> configList = controlService.getUnfinishedConfigs();
-            // Duyệt qua từng cấu hình và thực thi ETL
+            // 3.Tạo vòng lặp for
+            // 3.1.Duyệt qua từng config trong list
             for (Config config : configList) {
+                // 3.2.Kiểm tra loại của config bằng switch-case
                 switch (config.getType()) {
+                    // 3.3.Nếu đúng config thì sẽ gọi phương thức 'transform_load_data_to_warehouse'
                     case LOAD_TO_DW:
                         loadToDWService.transformAndLoadDataToWarehouse(config);
+                        //4.Kết thúc vòng lặp
                         break;
                 }
             }
